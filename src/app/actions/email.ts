@@ -115,7 +115,13 @@ export async function fetchLatestEmails() {
   }
 
   // Sort by date descending
-  emails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  emails.sort((a, b) => {
+    const timeA = new Date(a.date).getTime();
+    const timeB = new Date(b.date).getTime();
+    const validA = isNaN(timeA) ? 0 : timeA;
+    const validB = isNaN(timeB) ? 0 : timeB;
+    return validB - validA;
+  });
 
   return emails;
 }
