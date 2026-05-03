@@ -25,26 +25,30 @@ export async function fetchLatestEmails() {
       });
 
       const messages = res.data.messages || [];
-      for (const msg of messages) {
-        const detail = await googleClients.gmail.users.messages.get({
-          userId: "me",
-          id: msg.id!,
-        });
-        
-        const headers = detail.data.payload?.headers;
-        const subject = headers?.find(h => h.name === "Subject")?.value;
-        const from = headers?.find(h => h.name === "From")?.value;
-        const date = headers?.find(h => h.name === "Date")?.value;
+      const gmailEmails = await Promise.all(
+        messages.map(async (msg) => {
+          const detail = await googleClients.gmail.users.messages.get({
+            userId: "me",
+            id: msg.id!,
+          });
 
-        emails.push({
-          id: msg.id,
-          provider: "gmail",
-          subject: subject || "No Subject",
-          from: from || "Unknown",
-          date: date,
-          snippet: detail.data.snippet,
-        });
-      }
+          const headers = detail.data.payload?.headers;
+          const subject = headers?.find(h => h.name === "Subject")?.value;
+          const from = headers?.find(h => h.name === "From")?.value;
+          const date = headers?.find(h => h.name === "Date")?.value;
+
+          return {
+            id: msg.id,
+            provider: "gmail",
+            subject: subject || "No Subject",
+            from: from || "Unknown",
+            date: date,
+            snippet: detail.data.snippet,
+          };
+        })
+      );
+
+      emails.push(...gmailEmails);
     }
   } catch (error: any) {
     console.error("Error fetching from Google:", error);
