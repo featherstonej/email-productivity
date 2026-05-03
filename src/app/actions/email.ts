@@ -4,12 +4,21 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { getGoogleClient } from "@/lib/google";
 import { getMicrosoftClient } from "@/lib/microsoft";
 
-export async function fetchLatestEmails() {
+type EmailSummary = {
+  id: string;
+  provider: string;
+  subject: string;
+  from: string;
+  date: string;
+  snippet: string | null | undefined;
+};
+
+export async function fetchLatestEmails(): Promise<EmailSummary[]> {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
   const client = await clerkClient();
-  let emails: any[] = [];
+  let emails: EmailSummary[] = [];
 
   // Try fetching Google token
   try {
