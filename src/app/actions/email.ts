@@ -35,14 +35,21 @@ export async function fetchLatestEmails() {
           const headers = detail.data.payload?.headers;
           const subject = headers?.find(h => h.name === "Subject")?.value;
           const from = headers?.find(h => h.name === "From")?.value;
-          const date = headers?.find(h => h.name === "Date")?.value;
+          const dateHeader = headers?.find(h => h.name === "Date")?.value;
+
+          let dateStr = new Date().toISOString();
+          if (dateHeader && !isNaN(new Date(dateHeader).getTime())) {
+            dateStr = new Date(dateHeader).toISOString();
+          } else if (detail.data.internalDate) {
+            dateStr = new Date(parseInt(detail.data.internalDate, 10)).toISOString();
+          }
 
           return {
             id: msg.id,
             provider: "gmail",
             subject: subject || "No Subject",
             from: from || "Unknown",
-            date: date,
+            date: dateStr,
             snippet: detail.data.snippet,
           };
         })
@@ -78,12 +85,17 @@ export async function fetchLatestEmails() {
 
       const messages = res.value || [];
       for (const msg of messages) {
+        let dateStr = new Date().toISOString();
+        if (msg.receivedDateTime && !isNaN(new Date(msg.receivedDateTime).getTime())) {
+          dateStr = new Date(msg.receivedDateTime).toISOString();
+        }
+
         emails.push({
           id: msg.id,
           provider: "outlook",
           subject: msg.subject || "No Subject",
           from: msg.from?.emailAddress?.address || "Unknown",
-          date: msg.receivedDateTime,
+          date: dateStr,
           snippet: msg.bodyPreview,
         });
       }
