@@ -22,7 +22,7 @@ export async function fetchLatestEmails(): Promise<EmailSummary[]> {
 
   // Try fetching Google token
   try {
-    const googleTokenResponse = await client.users.getUserOauthAccessToken(userId, "oauth_google");
+    const googleTokenResponse = await client.users.getUserOauthAccessToken(userId, "google");
     const googleToken = googleTokenResponse.data[0]?.token;
 
     if (googleToken) {
@@ -54,7 +54,7 @@ export async function fetchLatestEmails(): Promise<EmailSummary[]> {
           }
 
           return {
-            id: msg.id,
+            id: msg.id || "unknown-id",
             provider: "gmail",
             subject: subject || "No Subject",
             from: from || "Unknown",
@@ -67,7 +67,15 @@ export async function fetchLatestEmails(): Promise<EmailSummary[]> {
       emails.push(...gmailEmails);
     }
   } catch (error: any) {
-    console.error("Error fetching from Google:", error);
+    // Only log actual errors, not 400/404s caused by unlinked accounts or expected scope errors
+    if (
+      error.status !== 400 &&
+      error.status !== 404 &&
+      !error.message?.includes('Bad Request') &&
+      !error.message?.includes('insufficient authentication scopes')
+    ) {
+      console.error("Error fetching from Google:", error.message || error);
+    }
     if (error.message?.includes('insufficient authentication scopes')) {
       emails.push({
         id: "mock-google-scope-error",
@@ -82,7 +90,7 @@ export async function fetchLatestEmails(): Promise<EmailSummary[]> {
 
   // Try fetching Microsoft token
   try {
-    const msTokenResponse = await client.users.getUserOauthAccessToken(userId, "oauth_microsoft");
+    const msTokenResponse = await client.users.getUserOauthAccessToken(userId, "microsoft");
     const msToken = msTokenResponse.data[0]?.token;
 
     if (msToken) {
@@ -100,7 +108,7 @@ export async function fetchLatestEmails(): Promise<EmailSummary[]> {
         }
 
         emails.push({
-          id: msg.id,
+          id: msg.id || "unknown-id",
           provider: "outlook",
           subject: msg.subject || "No Subject",
           from: msg.from?.emailAddress?.address || "Unknown",
@@ -110,7 +118,16 @@ export async function fetchLatestEmails(): Promise<EmailSummary[]> {
       }
     }
   } catch (error: any) {
-    console.error("Error fetching from Microsoft:", error);
+    // Only log actual errors, not 400/404s caused by unlinked accounts or expected scope errors
+    if (
+      error.status !== 400 &&
+      error.status !== 404 &&
+      !error.message?.includes('Bad Request') &&
+      !error.message?.includes('insufficient') &&
+      error.statusCode !== 403
+    ) {
+      console.error("Error fetching from Microsoft:", error.message || error);
+    }
     if (error.message?.includes('insufficient') || error.statusCode === 403) {
       emails.push({
         id: "mock-ms-scope-error",
