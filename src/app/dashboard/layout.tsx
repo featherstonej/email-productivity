@@ -1,7 +1,8 @@
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="app-container" style={{ flexDirection: "row" }}>
       {/* Sidebar */}
